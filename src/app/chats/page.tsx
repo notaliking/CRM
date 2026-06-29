@@ -183,7 +183,7 @@ export default function ChatsPage() {
       const usersRes = await getUsersAction();
       if (usersRes.success && usersRes.users) {
         if (isManager) {
-          setMembers(usersRes.users.filter((u) => u.role !== "SUPERADMIN"));
+          setMembers(usersRes.users.filter((u: any) => u.role !== "SUPERADMIN"));
         } else {
           setMembers(usersRes.users);
         }
