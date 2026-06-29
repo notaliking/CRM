@@ -286,7 +286,7 @@ export async function getLeadsAction(
           where: { role: "SUPERADMIN" },
           select: { id: true },
         });
-        const superAdminIds = superAdmins.map((u) => u.id);
+        const superAdminIds = superAdmins.map((u: any) => u.id);
         
         whereClause.NOT = {
           assignedAgentId: { in: superAdminIds }
@@ -933,7 +933,7 @@ export async function getMemberWhatsappChatsAction(userId: string, role?: string
           where: { role: "SUPERADMIN" },
           select: { id: true },
         });
-        const superAdminIds = superAdmins.map((u) => u.id);
+        const superAdminIds = superAdmins.map((u: any) => u.id);
         
         whereClause.NOT = {
           userId: { in: superAdminIds }
