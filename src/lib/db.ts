@@ -1,10 +1,6 @@
 import { PrismaClient } from "@prisma/client";
-import { Pool, neonConfig } from "@neondatabase/serverless";
-import { PrismaNeon } from "@prisma/adapter-neon";
-import ws from "ws";
-
-// Set WebSocket constructor for Node.js environments (like Vercel Serverless Functions)
-neonConfig.webSocketConstructor = ws;
+import { Pool } from "pg";
+import { PrismaPg } from "@prisma/adapter-pg";
 
 const globalForPrisma = global as unknown as { prisma?: PrismaClient };
 
@@ -24,9 +20,9 @@ const getPrismaClient = (): PrismaClient => {
   }
   
   const pool = new Pool({ connectionString });
-  const adapter = new PrismaNeon(pool as any);
+  const adapter = new PrismaPg(pool);
   const client = new PrismaClient({ adapter });
-  
+
   if (process.env.NODE_ENV !== "production") {
     globalForPrisma.prisma = client;
   }
