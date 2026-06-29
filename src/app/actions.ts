@@ -138,7 +138,7 @@ export async function getDashboardStatsAction(role: string, userId: string) {
     });
 
     const leaderboard = await Promise.all(
-      agents.map(async (agent) => {
+      agents.map(async (agent: any) => {
         // Find won leads and sum their maxBudget
         const wonLeads = await prisma.lead.findMany({
           where: {
@@ -151,7 +151,7 @@ export async function getDashboardStatsAction(role: string, userId: string) {
         });
 
         const wonCount = wonLeads.length;
-        const volume = wonLeads.reduce((sum, lead) => sum + (lead.maxBudget || 975000), 0);
+        const volume = wonLeads.reduce((sum: number, lead: any) => sum + (lead.maxBudget || 975000), 0);
         
         // Return structured leaderboard row
         let achievements: string[] = [];
