@@ -170,7 +170,7 @@ export async function getDashboardStatsAction(role: string, userId: string) {
     );
 
     // Sort leaderboard by deals closed, then volume
-    leaderboard.sort((a, b) => b.dealsClosed - a.dealsClosed || b.volume - a.volume);
+    leaderboard.sort((a: any, b: any) => b.dealsClosed - a.dealsClosed || b.volume - a.volume);
 
     // 5. System Logs (Only visible to SuperAdmin)
     let systemLogs: { timestamp: string; level: string; message: string }[] = [];
