@@ -13,9 +13,14 @@ const getPrismaClient = (): PrismaClient => {
     return globalForPrisma.prisma;
   }
   
-  const connectionString = process.env.DATABASE_URL;
-  if (!connectionString) {
-    throw new Error("DATABASE_URL is not set");
+  let connectionString = process.env.DATABASE_URL;
+  if (connectionString) {
+    // Strip surrounding double/single quotes and trim whitespace
+    connectionString = connectionString.replace(/^["']|["']$/g, "").trim();
+  }
+
+  if (!connectionString || connectionString === "undefined") {
+    throw new Error("DATABASE_URL is not set or is invalid");
   }
   
   const pool = new Pool({ connectionString });
