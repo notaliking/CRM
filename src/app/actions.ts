@@ -129,7 +129,7 @@ export async function getDashboardStatsAction(role: string, userId: string) {
       where: { status: "SOLD" },
       select: { price: true },
     });
-    const salesVolume = soldProperties.reduce((sum: number, p) => sum + p.price, 0);
+    const salesVolume = soldProperties.reduce((sum: number, p: { price: number }) => sum + p.price, 0);
 
     // 4. Leaderboard Ranking
     // Let's get agents and count how many WON leads they have
