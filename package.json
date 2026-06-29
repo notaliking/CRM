@@ -4,7 +4,7 @@
   "private": true,
   "scripts": {
     "dev": "next dev",
-    "build": "node -e \"if (process.env.DATABASE_URL) process.env.DATABASE_URL = process.env.DATABASE_URL.replace(/^['\\\"]|['\\\"]$/g, '').trim(); require('child_process').execSync('prisma db push && next build', { stdio: 'inherit' });\"",
+    "build": "node -e \"const url = process.env.DATABASE_URL; console.log('DATABASE_URL prefix:', url ? url.slice(0, 25) : 'undefined'); if (url) { process.env.DATABASE_URL = url.replace(/^['\\\"\\s]+|['\\\"\\s]+$/g, '').trim(); console.log('Cleaned prefix:', process.env.DATABASE_URL.slice(0, 25)); } require('child_process').execSync('prisma db push && next build', { stdio: 'inherit' });\"",
     "start": "next start",
     "lint": "eslint",
     "postinstall": "prisma generate"
