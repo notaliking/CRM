@@ -144,7 +144,7 @@ export default function MembersPortalPage() {
       const res = await getUsersAction();
       if (res.success && res.users) {
         setMembers(res.users);
-        const updatedMember = res.users.find((u) => u.id === connectingMember.id);
+        const updatedMember = res.users.find((u: any) => u.id === connectingMember.id);
         if (updatedMember) {
           setConnectingMember(updatedMember);
           if (updatedMember.whatsappConnected) {

@@ -154,7 +154,7 @@ export default function SettingsPage() {
       const fetchUserProfile = async () => {
         const res = await getUsersAction();
         if (res.success && res.users) {
-          const currentUser = res.users.find(u => u.id === user.id);
+          const currentUser = res.users.find((u: any) => u.id === user.id);
           if (currentUser && currentUser.whatsapp) {
             setProfileWhatsapp(currentUser.whatsapp);
           }
@@ -576,7 +576,7 @@ export default function SettingsPage() {
 
         {/* Tab Selection */}
         <div className="flex flex-wrap gap-2 border-b border-slate-800 pb-px">
-          {tabs.filter(t => t.visible).map((tab) => {
+          {tabs.filter((t: any) => t.visible).map((tab) => {
             const Icon = tab.icon;
             const active = activeTab === tab.id;
             return (
