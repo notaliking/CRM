@@ -1,0 +1,22 @@
+[package]
+name = "aliki/triple-eye-crm"
+version = "0.1.0"
+description = "Enterprise Real Estate CRM with WhatsApp Integration"
+license = "MIT"
+
+[[app]]
+name = "triple-eye-crm"
+provider = "container"
+
+[app.container]
+image = "."
+entrypoint = ["/app/start.sh"]
+
+[[app.ports]]
+port = 3000
+target_port = 3000
+protocol = "http"
+
+[[app.volumes]]
+name = "crm-data"
+mount_path = "/app/data"

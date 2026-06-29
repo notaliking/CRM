@@ -1,0 +1,117 @@
+datasource db {
+  provider = "sqlite"
+}
+
+generator client {
+  provider        = "prisma-client-js"
+  previewFeatures = ["driverAdapters"]
+}
+
+model User {
+  id                 String   @id @default(uuid())
+  name               String
+  email              String   @unique
+  password           String   @default("password123")
+  role               String   // SUPERADMIN, MANAGER, AGENT
+  avatarUrl          String?
+  whatsapp           String?
+  whatsappConnected  Boolean  @default(false)
+  whatsappBusinessId String?
+  whatsappQr         String?
+  whatsappPairingCode String?
+  whatsappChats      WhatsappChat[]
+  permissions        String   @default("{\"canViewTeamChats\":false,\"canManageTeam\":false}")
+  createdAt          DateTime @default(now())
+  messages           Message[]
+}
+
+model Lead {
+  id                String    @id @default(uuid())
+  name              String
+  email             String?
+  phone             String?
+  source            String    // Meta Ads, Google Ads, TikTok, Website Form
+  status            String    // NEW, CONTACTED, QUALIFIED, LOST, WON
+  assignedAgentId   String?
+  assignedAgentName String?
+  clickId           String?
+  preferredType     String?   // APARTMENT, PENTHOUSE, HOUSE, COMMERCIAL, OFFICE
+  maxBudget         Float?
+  createdAt         DateTime  @default(now())
+  messages          Message[]
+  notes             Note[]
+  tasks             Task[]
+}
+
+model Property {
+  id           String   @id @default(uuid())
+  project      String
+  type         String   // APARTMENT, PENTHOUSE, HOUSE, COMMERCIAL, OFFICE
+  transaction  String   // RENTING, RESELLING, INVESTMENT
+  price        Float
+  status       String   // AVAILABLE, RESERVED, SOLD
+  installments String
+  beds         Int?
+  baths        Int?
+  area         Int?     // in sqft
+  createdAt    DateTime @default(now())
+}
+
+model Message {
+  id         String   @id @default(uuid())
+  leadId     String
+  lead       Lead     @relation(fields: [leadId], references: [id], onDelete: Cascade)
+  senderId   String?  // null if sent by lead
+  sender     User?    @relation(fields: [senderId], references: [id], onDelete: SetNull)
+  content    String
+  isFromLead Boolean  @default(false)
+  createdAt  DateTime @default(now())
+}
+
+model Note {
+  id        String   @id @default(uuid())
+  leadId    String
+  lead      Lead     @relation(fields: [leadId], references: [id], onDelete: Cascade)
+  userId    String
+  userName  String
+  content   String
+  createdAt DateTime @default(now())
+}
+
+model Task {
+  id        String   @id @default(uuid())
+  leadId    String
+  lead      Lead     @relation(fields: [leadId], references: [id], onDelete: Cascade)
+  userId    String
+  title     String
+  dueDate   DateTime
+  status    String   // PENDING, COMPLETED
+  createdAt DateTime @default(now())
+}
+
+model WhatsappChat {
+  id           String   @id @default(uuid())
+  userId       String
+  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  contactName  String
+  contactPhone String
+  lastMessage  String
+  updatedAt    DateTime @updatedAt
+  messages     String   // JSON stringified array of messages [{sender: 'lead'|'agent', text: string, time: string}]
+}
+
+model SystemSetting {
+  key   String @id
+  value String
+}
+
+model SharedAsset {
+  id        String   @id @default(uuid())
+  name      String
+  category  String   // PROJECT, INVENTORY, VIDEO, PICTURE, VISUAL, BROCHURE_PDF
+  url       String
+  mimeType  String
+  fileSize  Int
+  createdAt DateTime @default(now())
+}
+
