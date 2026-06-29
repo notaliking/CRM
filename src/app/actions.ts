@@ -187,12 +187,12 @@ export async function getDashboardStatsAction(role: string, userId: string) {
       });
 
       systemLogs = [
-        ...recentLeadsForLogs.map(lead => ({
+        ...recentLeadsForLogs.map((lead: any) => ({
           timestamp: lead.createdAt.toISOString(),
           level: "INFO",
           message: `New lead "${lead.name}" received via ${lead.source}.`,
         })),
-        ...recentPropertiesForLogs.map(prop => ({
+        ...recentPropertiesForLogs.map((prop: any) => ({
           timestamp: prop.createdAt.toISOString(),
           level: "INFO",
           message: `Property "${prop.project}" (${prop.type}) added to inventory.`,
