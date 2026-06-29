@@ -1,30 +1,99 @@
-const { default: makeWASocket, useMultiFileAuthState, DisconnectReason } = require('@whiskeysockets/baileys');
+const { default: makeWASocket, DisconnectReason, initAuthCreds, BufferJSON, proto } = require('@whiskeysockets/baileys');
 const { PrismaClient } = require('@prisma/client');
-const { PrismaBetterSqlite3 } = require('@prisma/adapter-better-sqlite3');
 const QRCode = require('qrcode');
 const http = require('http');
 const path = require('path');
-const fs = require('fs');
 const pino = require('pino');
 
-const dbPath = path.resolve(__dirname, "dev.db");
-const adapter = new PrismaBetterSqlite3({
-  url: `file:${dbPath}`,
-});
-const prisma = new PrismaClient({ adapter });
+const prisma = new PrismaClient();
 const sessions = {};
 
-const SESSIONS_DIR = process.env.SESSIONS_DIR 
-  ? path.resolve(process.env.SESSIONS_DIR) 
-  : path.join(__dirname, 'sessions');
-
-// Helper to clean up session directory
-function cleanSessionDir(userId) {
-  const sessionPath = path.join(SESSIONS_DIR, userId);
-  if (fs.existsSync(sessionPath)) {
-    fs.rmSync(sessionPath, { recursive: true, force: true });
+// Helper to clean up session in database
+async function cleanSessionDb(userId) {
+  try {
+    await prisma.whatsAppSession.delete({
+      where: { id: userId }
+    });
+    console.log(`[Session] Deleted database session for user ${userId}`);
+  } catch (err) {
+    // Session might not exist
   }
 }
+
+// Custom Prisma-backed Authentication State
+async function usePrismaAuthState(userId) {
+  let session = await prisma.whatsAppSession.findUnique({
+    where: { id: userId }
+  });
+
+  let creds;
+  let keys = {};
+
+  if (session) {
+    creds = JSON.parse(session.creds, BufferJSON.reviver);
+    keys = JSON.parse(session.keys, BufferJSON.reviver);
+  } else {
+    creds = initAuthCreds();
+    await prisma.whatsAppSession.create({
+      data: {
+        id: userId,
+        creds: JSON.stringify(creds, BufferJSON.replacer),
+        keys: JSON.stringify(keys, BufferJSON.replacer)
+      }
+    });
+  }
+
+  const saveCreds = async () => {
+    await prisma.whatsAppSession.update({
+      where: { id: userId },
+      data: {
+        creds: JSON.stringify(creds, BufferJSON.replacer)
+      }
+    });
+  };
+
+  return {
+    state: {
+      creds,
+      keys: {
+        get: (type, ids) => {
+          const data = {};
+          for (const id of ids) {
+            let value = keys[`${type}-${id}`];
+            if (value) {
+              if (type === 'app-state-sync-key') {
+                value = proto.Message.AppStateSyncKeyData.fromObject(value);
+              }
+              data[id] = value;
+            }
+          }
+          return data;
+        },
+        set: async (data) => {
+          for (const category in data) {
+            for (const id in data[category]) {
+              const value = data[category][id];
+              const key = `${category}-${id}`;
+              if (value) {
+                keys[key] = value;
+              } else {
+                delete keys[key];
+              }
+            }
+          }
+          await prisma.whatsAppSession.update({
+            where: { id: userId },
+            data: {
+              keys: JSON.stringify(keys, BufferJSON.replacer)
+            }
+          });
+        }
+      }
+    },
+    saveCreds
+  };
+}
+
 
 // Initialize a WhatsApp connection for a user
 async function initWhatsappSession(userId) {
@@ -46,9 +115,8 @@ async function initWhatsappSession(userId) {
   }
 
   console.log(`[Session] Starting WhatsApp session for user ${userId}...`);
-  const sessionPath = path.join(SESSIONS_DIR, userId);
   
-  const { state, saveCreds } = await useMultiFileAuthState(sessionPath);
+  const { state, saveCreds } = await usePrismaAuthState(userId);
 
   const sock = makeWASocket({
     auth: state,
@@ -123,7 +191,7 @@ async function initWhatsappSession(userId) {
         setTimeout(() => initWhatsappSession(userId), 5000);
       } else {
         // Logged out - clean up credentials
-        cleanSessionDir(userId);
+        await cleanSessionDb(userId);
         await prisma.user.update({
           where: { id: userId },
           data: { whatsappBusinessId: null },
@@ -293,16 +361,9 @@ async function initWhatsappSession(userId) {
 // Auto-restore active sessions on startup
 async function restoreSessions() {
   try {
-    const connectedUsers = await prisma.user.findMany({
-      where: { whatsapp: { not: null } },
-    });
-    
-    for (const user of connectedUsers) {
-      // If session files exist, restore the connection automatically
-      const sessionPath = path.join(SESSIONS_DIR, user.id);
-      if (fs.existsSync(sessionPath)) {
-        initWhatsappSession(user.id);
-      }
+    const dbSessions = await prisma.whatsAppSession.findMany();
+    for (const session of dbSessions) {
+      initWhatsappSession(session.id);
     }
   } catch (err) {
     console.error('[Backup] Failed to restore sessions:', err);
@@ -358,7 +419,7 @@ const server = http.createServer((req, res) => {
         if (sock) {
           await sock.logout();
         } else {
-          cleanSessionDir(userId);
+          await cleanSessionDb(userId);
           await prisma.user.update({
             where: { id: userId },
             data: { whatsappConnected: false, whatsappQr: null, whatsappBusinessId: null },
