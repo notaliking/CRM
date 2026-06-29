@@ -4,6 +4,7 @@ import "./globals.css";
 import { AuthProvider } from "@/components/AuthProvider";
 import { MetaPixel } from "@/components/MetaPixel";
 import { getMetaConfig } from "@/lib/meta";
+import { Suspense } from "react";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -36,7 +37,9 @@ export default async function RootLayout({
         <AuthProvider>
           {children}
         </AuthProvider>
-        <MetaPixel pixelId={config.pixelId} />
+        <Suspense fallback={null}>
+          <MetaPixel pixelId={config.pixelId} />
+        </Suspense>
       </body>
     </html>
   );
