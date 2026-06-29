@@ -375,7 +375,7 @@ export default function ChatsPage() {
     const wpInterval = setInterval(async () => {
       const wpRes = await getMemberWhatsappChatsAction(user?.id || "", user?.role);
       if (wpRes.success && wpRes.chats) {
-        const updatedChat = wpRes.chats.find(c => c.id === selectedWhatsappChatId);
+        const updatedChat = wpRes.chats.find((c: any) => c.id === selectedWhatsappChatId);
         if (updatedChat) {
           try {
             const parsed = JSON.parse(updatedChat.messages);
